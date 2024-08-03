@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
 def get_s3_client():
     aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
     aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
-    aws_region = os.getenv('AWS_REGION')
+    aws_region = 'us-east-2'  # Hardcoded region
 
-    if aws_access_key_id and aws_secret_access_key and aws_region:
+    if aws_access_key_id and aws_secret_access_key:
         logging.debug("Using AWS credentials from environment variables.")
         return boto3.client(
             's3',
@@ -31,7 +31,7 @@ def get_s3_client():
         )
     else:
         logging.debug("Using IAM role for AWS credentials.")
-        session = boto3.Session(region_name=aws_region if aws_region else None)
+        session = boto3.Session(region_name=aws_region)
         return session.client('s3')
 
 @app.route('/checkin')
