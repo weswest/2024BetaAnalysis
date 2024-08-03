@@ -19,7 +19,7 @@ def get_s3_client():
     aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
     aws_region = os.getenv('AWS_REGION')
 
-    if aws_access_key_id and aws_secret_access_key:
+    if aws_access_key_id and aws_secret_access_key and aws_region:
         logging.debug("Using AWS credentials from environment variables.")
         return boto3.client(
             's3',
@@ -29,7 +29,7 @@ def get_s3_client():
         )
     else:
         logging.debug("Using IAM role for AWS credentials.")
-        session = boto3.Session(region_name=aws_region)  # Explicitly specify the region if available
+        session = boto3.Session(region_name=aws_region if aws_region else None)
         return session.client('s3')
 
 def load_bank_data():
