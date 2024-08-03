@@ -15,17 +15,22 @@ app = Flask(__name__)
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def get_s3_client():
-    if os.getenv('AWS_ACCESS_KEY_ID') and os.getenv('AWS_SECRET_ACCESS_KEY'):
+    aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
+    aws_secret_access_key = os.getenv('AWS_SECRET_ACCESS_KEY')
+    aws_region = os.getenv('AWS_REGION')
+
+    if aws_access_key_id and aws_secret_access_key:
         logging.debug("Using AWS credentials from environment variables.")
         return boto3.client(
             's3',
-            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-            region_name=os.getenv('AWS_REGION')
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            region_name=aws_region
         )
     else:
         logging.debug("Using IAM role for AWS credentials.")
-        return boto3.client('s3')
+        session = boto3.Session(region_name=aws_region)  # Explicitly specify the region if available
+        return session.client('s3')
 
 def load_bank_data():
     s3_client = get_s3_client()
@@ -47,6 +52,10 @@ bank_options = load_bank_data()
 @app.route('/')
 def index():
     return render_template('index.html', bank_options=bank_options)
+
+@app.route('/checkin')
+def checkin():
+    return "Frontend is running."
 
 @app.route('/get_model', methods=['POST'])
 def get_model():
