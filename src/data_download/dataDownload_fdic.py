@@ -247,9 +247,9 @@ if __name__ == "__main__":
         'COREDEP',  # Core Deposits
         'BRO',  # Brokered Deposits
         'DEPINS',  # Insured Deposits
-        'EDEPDOM',  # Estimated Insured Deposits - Domestic
-        'EINTEXP',  # Estimated Interest Expense
-        'EDEPFOR',  # Estimated Insured Deposits - Foreign
+        'EDEPDOM',  # Domestic Deposit Interest Expense
+        'EINTEXP',  # Total Interest Expense
+        'EDEPFOR',  # Foreign Deposit Interest Expense
         'INTINCY',  # Total Interest Income
         'INTEXPY',  # Total Interest Expense
         'NIMY',  # Net Interest Margin

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Bank Model Selector</title>
+</head>
+<body>
+    <form id="modelForm">
+        <label for="bank">Select Bank:</label>
+        <select id="bank" name="bank">
+            {% for option in bank_options %}
+                <option value="{{ option.name }} - {{ option.cert }} - {{ option.assets }}">{{ option.name }} - {{ option.cert }} - {{ option.assets }}</option>
+            {% endfor %}
+        </select>
+        <br><br>
+        <label for="model">Select Model:</label>
+        <select id="model" name="model">
+            <option value="error correction">Error Correction</option>
+            <option value="linear regression">Linear Regression</option>
+        </select>
+        <br><br>
+        <button type="button" onclick="getModel()">Get Model</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        function getModel() {
+            const form = document.getElementById('modelForm');
+            const formData = new FormData(form);
+            const [bankName, cert, assets] = formData.get('bank').split(' - ');
+            const model = formData.get('model');
+
+            fetch('/get_model', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    bankName: bankName,
+                    cert: cert,
+                    assets: assets,
+                    model: model,
+                }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('result');
+                if (data.model_results && !data.model_results.error) {
+                    resultDiv.innerHTML = `
+                        <p>Model Type: ${data.model_results.model_type}</p>
+                        <p>Intercept: ${data.model_results.intercept}</p>
+                        <p>Coefficient: ${data.model_results.coefficient}</p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p>Error: ${data.model_results ? data.model_results.error : 'Unknown error'}</p>`;
+                }
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
