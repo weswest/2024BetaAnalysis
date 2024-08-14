@@ -7,6 +7,7 @@ import pandas as pd
 from dotenv import load_dotenv
 from sklearn.linear_model import LinearRegression
 import threading
+from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 
 # Load environment variables
 load_dotenv()
@@ -16,6 +17,10 @@ logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s -
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
+
+# Define Prometheus Counter
+REQUEST_COUNTER = Counter('backend_requests_total', 'Total number of requests processed by the backend')  # Add this line
+
 
 def get_s3_client():
     aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
@@ -53,6 +58,7 @@ def consume_model_requests():
             if 'Messages' in response:
                 for message in response['Messages']:
                     logging.debug(f"Consumed model request: {message['Body']}")
+                    REQUEST_COUNTER.inc()  # Increment the request counter  # Add this line
                     process_model_request(json.loads(message['Body']))
                     sqs_client.delete_message(
                         QueueUrl=REQUEST_QUEUE_URL,
@@ -150,6 +156,10 @@ def get_logs():
         return jsonify(logs)
     except FileNotFoundError:
         return jsonify({"error": "Log file not found"}), 404
+
+@app.route('/metrics')
+def metrics():
+    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 
 if __name__ == '__main__':
