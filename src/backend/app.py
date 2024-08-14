@@ -1,20 +1,21 @@
-from flask import Flask, request, jsonify
-import json
+from flask import Flask, jsonify
 import boto3
-import os
-from dotenv import load_dotenv
-import pandas as pd
-from sklearn.linear_model import LinearRegression
+import json
 import logging
+import os
+import pandas as pd
+from dotenv import load_dotenv
+from sklearn.linear_model import LinearRegression
+import threading
 
 # Load environment variables
 load_dotenv()
 
-app = Flask(__name__)
-
 # Set up logging to log to the console
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+app = Flask(__name__)
 
 def get_s3_client():
     aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
@@ -34,24 +35,45 @@ def get_s3_client():
         session = boto3.Session(region_name=aws_region)
         return session.client('s3')
 
-@app.route('/checkin')
-def checkin():
-    return "Backend is running."
+# AWS SQS configuration
+SQS_REGION = 'us-east-2'
+REQUEST_QUEUE_URL = 'https://sqs.us-east-2.amazonaws.com/471112830027/get_a_model_queue'
+RESPONSE_QUEUE_URL = 'https://sqs.us-east-2.amazonaws.com/471112830027/model_results_queue'
 
-@app.route('/process', methods=['POST'])
-def process():
-    data = request.json
+sqs_client = boto3.client('sqs', region_name=SQS_REGION)
+
+def consume_model_requests():
+    while True:
+        try:
+            response = sqs_client.receive_message(
+                QueueUrl=REQUEST_QUEUE_URL,
+                MaxNumberOfMessages=1,
+                WaitTimeSeconds=10
+            )
+            if 'Messages' in response:
+                for message in response['Messages']:
+                    logging.debug(f"Consumed model request: {message['Body']}")
+                    process_model_request(json.loads(message['Body']))
+                    sqs_client.delete_message(
+                        QueueUrl=REQUEST_QUEUE_URL,
+                        ReceiptHandle=message['ReceiptHandle']
+                    )
+        except Exception as e:
+            logging.error(f"Error consuming model requests from SQS: {str(e)}")
+
+def process_model_request(data):
+    session_data = data['session_data']
     bank_name = data['bank_name']
     cert = data['cert']
     assets = data['assets']
     model_type = data['model']
     result = f"Bank: {bank_name}; Cert: {cert}; Assets: {assets}; Model: {model_type}"
 
-    logger.debug(f"Received request with data: {data}")
+    logger.debug(f"Processing data: {data} and session data: {session_data}")
 
     # Log the request
     with open('log.json', 'a') as log_file:
-        log_entry = {'bank_name': bank_name, 'cert': cert, 'assets': assets, 'model': model_type, 'result': result}
+        log_entry = {'session_data': session_data, 'bank_name': bank_name, 'cert': cert, 'assets': assets, 'model': model_type, 'result': result}
         json.dump(log_entry, log_file)
         log_file.write('\n')
 
@@ -102,9 +124,25 @@ def process():
         logger.debug(s3_message)
         model_results = {'error': str(e)}
 
-    return jsonify({'result': result, 's3_message': s3_message, 'model_results': model_results})
+    response_message = {
+        'session_data': session_data,
+        'model_results': model_results
+    }
 
-@app.route('/logs', methods=['GET'])
+    try:
+        response = sqs_client.send_message(
+            QueueUrl=RESPONSE_QUEUE_URL,
+            MessageBody=json.dumps(response_message)
+        )
+        logging.debug(f"Published model results to SQS: {response['MessageId']}")
+    except Exception as e:
+        logging.error(f"Failed to publish model results to SQS: {str(e)}")
+
+@app.route('/checkin')
+def checkin():
+    return "Backend is running."
+
+@app.route('/logs')
 def get_logs():
     try:
         with open('log.json', 'r') as log_file:
@@ -113,5 +151,7 @@ def get_logs():
     except FileNotFoundError:
         return jsonify({"error": "Log file not found"}), 404
 
+
 if __name__ == '__main__':
+    threading.Thread(target=consume_model_requests, daemon=True).start()
     app.run(host='0.0.0.0', port=8000)

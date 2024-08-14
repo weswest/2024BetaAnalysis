@@ -3,6 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <title>Bank Model Selector</title>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.814.0.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get the AWS credentials from data attributes
+            const accessKeyId = '{{ aws_access_key_id }}';
+            const secretAccessKey = '{{ aws_secret_access_key }}';
+            const region = 'us-east-2';
+
+            if (accessKeyId && secretAccessKey) {
+                // Configure the AWS SDK with the credentials
+                AWS.config.update({
+                    region: region,
+                    credentials: new AWS.Credentials({
+                        accessKeyId: accessKeyId,
+                        secretAccessKey: secretAccessKey
+                    })
+                });
+            } else {
+                // Configure the AWS SDK to use the IAM role credentials
+                AWS.config.update({
+                    region: region
+                });
+            }
+
+            // SQS Client
+            const sqs = new AWS.SQS();
+
+            function sendModelRequest() {
+                const form = document.getElementById('modelForm');
+                const formData = new FormData(form);
+                const [bankName, cert, assets] = formData.get('bank').split(' - ');
+                const model = formData.get('model');
+                const sessionData = {
+                    session_id: String(Date.now()),
+                    ip_address: '192.168.1.1',
+                    timestamp: new Date().toISOString()
+                };
+                const message = {
+                    bank_name: bankName,
+                    cert: cert,
+                    assets: assets,
+                    model: model,
+                    session_data: sessionData
+                };
+
+                const params = {
+                    MessageBody: JSON.stringify(message),
+                    QueueUrl: 'https://sqs.us-east-2.amazonaws.com/471112830027/get_a_model_queue'
+                };
+
+                sqs.sendMessage(params, (err, data) => {
+                    const resultDiv = document.getElementById('result');
+                    if (err) {
+                        console.error(err);
+                        resultDiv.innerHTML = `<p>Error: ${err.message}</p>`;
+                    } else {
+                        console.log(data);
+                        resultDiv.innerHTML = `<p>Request sent successfully. Message ID: ${data.MessageId}</p>`;
+                        pollForResults(sessionData.session_id);
+                    }
+                });
+            }
+
+            function pollForResults(sessionId) {
+                const params = {
+                    QueueUrl: 'https://sqs.us-east-2.amazonaws.com/471112830027/model_results_queue',
+                    MaxNumberOfMessages: 1,
+                    WaitTimeSeconds: 10
+                };
+
+                const poll = () => {
+                    sqs.receiveMessage(params, (err, data) => {
+                        if (err) {
+                            console.error(err);
+                            return;
+                        }
+                        if (data.Messages) {
+                            data.Messages.forEach(message => {
+                                const body = JSON.parse(message.Body);
+                                if (body.session_data.session_id === sessionId) {
+                                    displayResults(body.model_results);
+                                    sqs.deleteMessage({
+                                        QueueUrl: 'https://sqs.us-east-2.amazonaws.com/471112830027/model_results_queue',
+                                        ReceiptHandle: message.ReceiptHandle
+                                    }, (err, data) => {
+                                        if (err) console.error(err);
+                                    });
+                                } else {
+                                    // Continue polling if the message is not for this session
+                                    setTimeout(poll, 1000);
+                                }
+                            });
+                        } else {
+                            // Continue polling if no messages are received
+                            setTimeout(poll, 1000);
+                        }
+                    });
+                };
+
+                poll();
+            }
+
+            function displayResults(results) {
+                const resultDiv = document.getElementById('result');
+                if (results.error) {
+                    resultDiv.innerHTML = `<p>Error: ${results.error}</p>`;
+                } else {
+                    resultDiv.innerHTML = `
+                        <p>Model Type: ${results.model_type}</p>
+                        <p>Intercept: ${results.intercept}</p>
+                        <p>Coefficient: ${results.coefficient}</p>
+                    `;
+                }
+            }
+
+            document.getElementById('submitButton').onclick = sendModelRequest;
+        });
+    </script>
 </head>
 <body>
     <form id="modelForm">
@@ -19,45 +137,9 @@
             <option value="linear regression">Linear Regression</option>
         </select>
         <br><br>
-        <button type="button" onclick="getModel()">Get Model</button>
+        <button type="button" id="submitButton">Get Model</button>
     </form>
 
     <div id="result"></div>
-
-    <script>
-        function getModel() {
-            const form = document.getElementById('modelForm');
-            const formData = new FormData(form);
-            const [bankName, cert, assets] = formData.get('bank').split(' - ');
-            const model = formData.get('model');
-
-            fetch('/get_model', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    bankName: bankName,
-                    cert: cert,
-                    assets: assets,
-                    model: model,
-                }),
-            })
-            .then(response => response.json())
-            .then(data => {
-                const resultDiv = document.getElementById('result');
-                if (data.model_results && !data.model_results.error) {
-                    resultDiv.innerHTML = `
-                        <p>Model Type: ${data.model_results.model_type}</p>
-                        <p>Intercept: ${data.model_results.intercept}</p>
-                        <p>Coefficient: ${data.model_results.coefficient}</p>
-                    `;
-                } else {
-                    resultDiv.innerHTML = `<p>Error: ${data.model_results ? data.model_results.error : 'Unknown error'}</p>`;
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        }
-    </script>
 </body>
 </html>
