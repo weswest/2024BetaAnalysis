@@ -12,7 +12,7 @@ load_dotenv()
 app = Flask(__name__)
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def get_s3_client():
     aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')

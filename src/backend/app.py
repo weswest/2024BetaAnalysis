@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import pandas as pd
 from sklearn.linear_model import LinearRegression
 import logging
+from prometheus_client import Counter, generate_latest, CONTENT_TYPE_LATEST
 
 # Load environment variables
 load_dotenv()
@@ -13,8 +14,11 @@ load_dotenv()
 app = Flask(__name__)
 
 # Set up logging to log to the console
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.WARNING, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# Prometheus counters
+REQUEST_COUNTER = Counter('backend_requests_total', 'Total number of requests processed by the backend')
 
 def get_s3_client():
     aws_access_key_id = os.getenv('AWS_ACCESS_KEY_ID')
@@ -40,6 +44,7 @@ def checkin():
 
 @app.route('/process', methods=['POST'])
 def process():
+    REQUEST_COUNTER.inc()  # Increment Prometheus counter
     data = request.json
     bank_name = data['bank_name']
     cert = data['cert']
@@ -112,6 +117,11 @@ def get_logs():
         return jsonify(logs)
     except FileNotFoundError:
         return jsonify({"error": "Log file not found"}), 404
+
+# Prometheus metrics endpoint
+@app.route('/metrics')
+def metrics():
+    return generate_latest(), 200, {'Content-Type': CONTENT_TYPE_LATEST}
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000)
