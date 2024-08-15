@@ -13,6 +13,7 @@
 
             if (accessKeyId && secretAccessKey) {
                 // Configure the AWS SDK with the credentials
+                console.log("Using credentials from environment variables.");
                 AWS.config.update({
                     region: region,
                     credentials: new AWS.Credentials({
@@ -22,6 +23,7 @@
                 });
             } else {
                 // Configure the AWS SDK to use the IAM role credentials
+                console.log("Using IAM role credentials from EC2.");
                 AWS.config.update({
                     region: region
                 });
