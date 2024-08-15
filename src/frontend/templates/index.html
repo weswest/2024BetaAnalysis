@@ -6,12 +6,11 @@
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.814.0.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Get the AWS credentials from data attributes
-            const accessKeyId = '{{ aws_access_key_id }}';
-            const secretAccessKey = '{{ aws_secret_access_key }}';
+            const accessKeyId = "{{ aws_access_key_id }}";
+            const secretAccessKey = "{{ aws_secret_access_key }}";
             const region = 'us-east-2';
 
-            if (accessKeyId !== "None" && secretAccessKey !== "None") {                // Configure the AWS SDK with the credentials
+            if (accessKeyId && secretAccessKey) {
                 console.log("Using credentials from environment variables.");
                 AWS.config.update({
                     region: region,
@@ -21,16 +20,11 @@
                     })
                 });
             } else {
-                // Configure the AWS SDK to use the IAM role credentials
                 console.log("Using IAM role credentials from EC2.");
-//                process.env.AWS_SDK_LOAD_CONFIG = 1;  // Programmatically set AWS_SDK_LOAD_CONFIG to 1
                 AWS.config.update({
                     region: region
                 });
             }
-
-            // Log AWS Credentials to ensure correct initialization (temporarily, remove later)
-            console.log("AWS Credentials:", AWS.config.credentials);
 
             // SQS Client
             const sqs = new AWS.SQS();
@@ -61,8 +55,7 @@
                 sqs.sendMessage(params, (err, data) => {
                     const resultDiv = document.getElementById('result');
                     if (err) {
-                        // Log full error details
-                        console.error('Full error:', err);
+                        console.error(err);
                         resultDiv.innerHTML = `<p>Error: ${err.message}</p>`;
                     } else {
                         console.log(data);
@@ -82,7 +75,7 @@
                 const poll = () => {
                     sqs.receiveMessage(params, (err, data) => {
                         if (err) {
-                            console.error('Error while polling:', err);
+                            console.error(err);
                             return;
                         }
                         if (data.Messages) {
@@ -94,7 +87,7 @@
                                         QueueUrl: 'https://sqs.us-east-2.amazonaws.com/471112830027/model_results_queue',
                                         ReceiptHandle: message.ReceiptHandle
                                     }, (err, data) => {
-                                        if (err) console.error('Delete message error:', err);
+                                        if (err) console.error(err);
                                     });
                                 } else {
                                     setTimeout(poll, 1000);
