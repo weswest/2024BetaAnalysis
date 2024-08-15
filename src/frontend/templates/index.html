@@ -23,7 +23,7 @@
             } else {
                 // Configure the AWS SDK to use the IAM role credentials
                 console.log("Using IAM role credentials from EC2.");
-                process.env.AWS_SDK_LOAD_CONFIG = 1;  // Programmatically set AWS_SDK_LOAD_CONFIG to 1
+//                process.env.AWS_SDK_LOAD_CONFIG = 1;  // Programmatically set AWS_SDK_LOAD_CONFIG to 1
                 AWS.config.update({
                     region: region
                 });
