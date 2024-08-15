@@ -11,8 +11,7 @@
             const secretAccessKey = '{{ aws_secret_access_key }}';
             const region = 'us-east-2';
 
-            if (accessKeyId && secretAccessKey) {
-                // Configure the AWS SDK with the credentials
+            if (accessKeyId !== "None" && secretAccessKey !== "None") {                // Configure the AWS SDK with the credentials
                 console.log("Using credentials from environment variables.");
                 AWS.config.update({
                     region: region,
