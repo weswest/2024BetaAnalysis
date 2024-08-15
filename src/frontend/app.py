@@ -19,7 +19,7 @@ def get_s3_client():
     aws_region = 'us-east-2'  # Hardcoded region
 
     if aws_access_key_id and aws_secret_access_key:
-        logging.debug("Using AWS credentials from environment variables.")
+        logging.warning("Using AWS credentials from environment variables.")
         return boto3.client(
             's3',
             aws_access_key_id=aws_access_key_id,
@@ -27,7 +27,7 @@ def get_s3_client():
             region_name=aws_region
         ), aws_access_key_id, aws_secret_access_key
     else:
-        logging.debug("Using IAM role for AWS credentials.")
+        logging.warning("Using IAM role for AWS credentials.")
         session = boto3.Session(region_name=aws_region)
         return session.client('s3'), None, None
 
@@ -43,7 +43,7 @@ def load_bank_data():
     df = pd.read_csv('institution_details.csv')
     df = df[df['Best_Asset_Rank'] < 200].sort_values(by='Asset_Value', ascending=False)
     options = df.apply(lambda row: {'name': row['Institution_Name'], 'cert': row['Cert'], 'assets': row['Asset_Value']}, axis=1).tolist()
-    logging.debug(f"First few bank options: {options[:5]}")
+    logging.warning(f"First few bank options: {options[:5]}")
     return options, aws_access_key_id, aws_secret_access_key
 
 bank_options, aws_access_key_id, aws_secret_access_key = load_bank_data()

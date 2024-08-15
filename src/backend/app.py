@@ -29,7 +29,7 @@ def get_s3_client():
     aws_region = 'us-east-2'  # Hardcoded region
 
     if aws_access_key_id and aws_secret_access_key:
-        logging.debug("Using AWS credentials from environment variables.")
+        logging.warning("Using AWS credentials from environment variables.")
         return boto3.client(
             's3',
             aws_access_key_id=aws_access_key_id,
@@ -37,7 +37,7 @@ def get_s3_client():
             region_name=aws_region
         )
     else:
-        logging.debug("Using IAM role for AWS credentials.")
+        logging.warning("Using IAM role for AWS credentials.")
         session = boto3.Session(region_name=aws_region)
         return session.client('s3')
 
@@ -58,7 +58,7 @@ def consume_model_requests():
             )
             if 'Messages' in response:
                 for message in response['Messages']:
-                    logging.debug(f"Consumed model request: {message['Body']}")
+                    logging.warning(f"Consumed model request: {message['Body']}")
 #                    REQUEST_COUNTER.inc()  # Increment the request counter  # Add this line
                     process_model_request(json.loads(message['Body']))
                     sqs_client.delete_message(
@@ -76,7 +76,7 @@ def process_model_request(data):
     model_type = data['model']
     result = f"Bank: {bank_name}; Cert: {cert}; Assets: {assets}; Model: {model_type}"
 
-    logger.debug(f"Processing data: {data} and session data: {session_data}")
+    logger.warning(f"Processing data: {data} and session data: {session_data}")
 
     # Log the request
     with open('log.json', 'a') as log_file:
@@ -92,7 +92,7 @@ def process_model_request(data):
     try:
         s3_client.head_object(Bucket=bucket_name, Key=object_key)
         s3_message = "I can see bank_data_rank200.csv"
-        logger.debug(s3_message)
+        logger.warning(s3_message)
         
         # Download the file
         s3_client.download_file(bucket_name, object_key, '/app/bank_data_rank200.csv')
@@ -122,7 +122,7 @@ def process_model_request(data):
                 'coefficient': coef,
                 'model_type': 'Linear Regression'
             }
-            logger.debug(f"Model results: {model_results}")
+            logger.warning(f"Model results: {model_results}")
         else:
             model_results = {'error': 'Necessary columns not found in data'}
             logger.debug(model_results['error'])
