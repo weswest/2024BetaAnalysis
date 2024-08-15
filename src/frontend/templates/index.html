@@ -27,6 +27,9 @@
                 });
             }
 
+            // Log AWS Credentials to ensure correct initialization (temporarily, remove later)
+            console.log("AWS Credentials:", AWS.config.credentials);
+
             // SQS Client
             const sqs = new AWS.SQS();
 
@@ -56,7 +59,8 @@
                 sqs.sendMessage(params, (err, data) => {
                     const resultDiv = document.getElementById('result');
                     if (err) {
-                        console.error(err);
+                        // Log full error details
+                        console.error('Full error:', err);
                         resultDiv.innerHTML = `<p>Error: ${err.message}</p>`;
                     } else {
                         console.log(data);
@@ -76,7 +80,7 @@
                 const poll = () => {
                     sqs.receiveMessage(params, (err, data) => {
                         if (err) {
-                            console.error(err);
+                            console.error('Error while polling:', err);
                             return;
                         }
                         if (data.Messages) {
@@ -88,15 +92,13 @@
                                         QueueUrl: 'https://sqs.us-east-2.amazonaws.com/471112830027/model_results_queue',
                                         ReceiptHandle: message.ReceiptHandle
                                     }, (err, data) => {
-                                        if (err) console.error(err);
+                                        if (err) console.error('Delete message error:', err);
                                     });
                                 } else {
-                                    // Continue polling if the message is not for this session
                                     setTimeout(poll, 1000);
                                 }
                             });
                         } else {
-                            // Continue polling if no messages are received
                             setTimeout(poll, 1000);
                         }
                     });
