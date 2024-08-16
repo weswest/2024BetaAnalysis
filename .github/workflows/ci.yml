@@ -20,6 +20,10 @@ jobs:
       
     - name: Debug Secrets
       run: |
+        echo "Testing Secrets"
+    
+    - name: Debug Variables
+      run: |
         echo ${{ vars.IP }}
         echo ${{ vars.SSH }}
     
