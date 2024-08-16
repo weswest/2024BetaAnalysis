@@ -20,12 +20,12 @@ jobs:
 
     - name: Test SSH connection
       run: |
-        curl -v telnet://${{ secrets.EC2_HOST }}:22
+        curl -v telnet://${{ secrets.EC2_HOST_NAME }}:22
     
     - name: Deploy to EC2
       uses: appleboy/ssh-action@v0.1.4
       with:
-        host: ${{ secrets.EC2_HOST }}
+        host: ${{ secrets.EC2_HOST_NAME }}
         username: ubuntu
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
