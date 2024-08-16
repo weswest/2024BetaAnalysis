@@ -20,8 +20,6 @@ jobs:
       
     - name: Debug Secrets
       run: |
-        echo ${{ secrets.EC2_HOST_NAME }}
-        echo ${{ secrets.EC2_SSH_KEY }}
         echo ${{ vars.IP }}
         echo ${{ vars.SSH }}
     
