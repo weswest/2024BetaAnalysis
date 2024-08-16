@@ -18,10 +18,6 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Test SSH connection
-      run: |
-        curl -v telnet://${{ secrets.EC2_HOST_NAME }}:22
-    
     - name: Deploy to EC2
       uses: appleboy/ssh-action@v0.1.4
       with:
