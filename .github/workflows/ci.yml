@@ -27,8 +27,8 @@ jobs:
         echo "Testing Variables"
         echo ${{ vars.MY_VAR }}
         echo ${{ vars.MY_VAR2 }}
-#        echo ${{ vars.SSH }}
-#        echo ${{ vars.IP }}
+        echo ${{ vars.SSH }}
+        echo ${{ vars.IP }}
     
 
     - name: Deploy to EC2
