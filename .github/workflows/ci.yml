@@ -27,7 +27,7 @@ jobs:
 
     - name: SSH and deploy
       run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/ssh_key ubuntu@${{ secrets.EC2_HOST_NAME }} << 'EOF'
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/ssh_key ubuntu@${{ secrets.EC2_HOST_NAME }}
           cd 2024BetaAnalysis
           docker-compose down
           git pull origin main
