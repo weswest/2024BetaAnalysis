@@ -24,6 +24,7 @@ jobs:
     
     - name: Debug Variables
       run: |
+        echo "Testing Variables"
         echo ${{ vars.IP }}
         echo ${{ vars.SSH }}
     
