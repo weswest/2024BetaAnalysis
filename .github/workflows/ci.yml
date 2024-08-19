@@ -14,31 +14,22 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '20'
-    
+
     - name: Checkout code
       uses: actions/checkout@v3
-      
-    - name: Debug Secrets
-      run: |
-        echo "Testing Secrets"
-    
-    - name: Debug Variables
-      run: |
-        echo "Testing Variables"
-        echo ${{ vars.MY_VAR }}
-        echo ${{ vars.MY_VAR2 }}
-        echo ${{ vars.SSH }}
-        echo ${{ vars.IP }}
-    
 
-    - name: Deploy to EC2
-      uses: appleboy/ssh-action@v0.1.4
+    - name: Install SSH key
+      uses: shimataro/ssh-key-action@v2
       with:
-        host: ${{ secrets.EC2_HOST_NAME }}
-        username: ubuntu
         key: ${{ secrets.EC2_SSH_KEY }}
-        script: |
+        name: ssh_key
+        known_hosts: ${{ secrets.EC2_HOST_NAME }}
+
+    - name: SSH and deploy
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/ssh_key ubuntu@${{ secrets.EC2_HOST_NAME }} << 'EOF'
           cd 2024BetaAnalysis
           docker-compose down
           git pull origin main
           docker-compose up -d
+        EOF
