@@ -10,26 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Set up Node.js 20
-      uses: actions/setup-node@v3
-      with:
-        node-version: '20'
-
     - name: Checkout code
       uses: actions/checkout@v3
 
     - name: Install SSH key
-      uses: shimataro/ssh-key-action@v2
+      uses: appleboy/ssh-action@master
       with:
+        host: ${{ secrets.EC2_HOST_NAME }}
+        username: ubuntu
         key: ${{ secrets.EC2_SSH_KEY }}
-        name: ssh_key
-        known_hosts: ${{ secrets.EC2_HOST_NAME }}
-
-    - name: SSH and deploy
-      run: |
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/ssh_key ubuntu@${{ secrets.EC2_HOST_NAME }}
+        script: |
           cd 2024BetaAnalysis
           docker-compose down
           git pull origin main
           docker-compose up -d
-        EOF
