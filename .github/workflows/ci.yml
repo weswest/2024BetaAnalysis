@@ -23,7 +23,7 @@ jobs:
           echo "Checking SHA256 hash of private_key:"
           sha256sum private_key
 
-    - name: Check Private Key File Size
+    - name: Check Private Key File Siz
       run: |
         echo "File size of private_key:"
         stat --format="%s" private_key
