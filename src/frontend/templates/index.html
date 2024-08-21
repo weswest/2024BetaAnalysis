@@ -6,7 +6,7 @@
 </head>
 <body>
     <form id="modelForm">
-        <label for="bank">Select Bank MY DUDE:</label>
+        <label for="bank">Select Bank:</label>
         <select id="bank" name="bank">
             {% for option in bank_options %}
                 <option value="{{ option.name }} - {{ option.cert }} - {{ option.assets }}">{{ option.name }} - {{ option.cert }} - {{ option.assets }}</option>
