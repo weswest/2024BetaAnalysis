@@ -13,14 +13,22 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Install SSH key
+    - name: Write SSH Key to file
+      run: |
+        echo "${{ secrets.EC2_SSH_KEY }}" > private_key
+        chmod 600 private_key
+
+    - name: SSH into EC2 and Deploy
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.EC2_HOST_NAME }}
         username: ubuntu
-        key: ${{ secrets.EC2_SSH_KEY }}
+        key_path: ./private_key
         script: |
           cd 2024BetaAnalysis
           docker-compose down
           git pull origin main
           docker-compose up -d
+
+    - name: Clean up private key
+      run: rm private_key
