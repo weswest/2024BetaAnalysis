@@ -55,7 +55,7 @@ def index():
 
 @app.route('/checkin')
 def checkin():
-    return "Frontend is running MY DUDE."
+    return "Frontend is running."
 
 @app.route('/get_model', methods=['POST'])
 def get_model():
