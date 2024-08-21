@@ -18,6 +18,11 @@ jobs:
         echo "${{ secrets.EC2_SSH_KEY }}" > private_key
         chmod 600 private_key
 
+    - name: Debug SSH Key
+      run: |
+        echo "Checking contents of private_key:"
+        cat private_key  # This will output the contents of the private_key file
+
     - name: SSH into EC2 and Deploy
       uses: appleboy/ssh-action@master
       with:
