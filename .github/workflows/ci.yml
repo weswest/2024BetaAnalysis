@@ -13,43 +13,16 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Write SSH Key to file
-      run: |
-        echo "${{ secrets.EC2_SSH_KEY }}" > private_key
-        chmod 600 private_key
-
-    - name: Debug SSH Key
-      run: |
-          echo "Checking SHA256 hash of private_key:"
-          sha256sum private_key
-
-    - name: Check Private Key File Siz
-      run: |
-        echo "File size of private_key:"
-        stat --format="%s" private_key
-
-    - name: Display Private Key with Line Numbers
-      run: |
-        echo "Displaying private_key with line numbers:"
-        cat -n private_key
-
-    - name: Count Lines in Private Key
-      run: |
-        echo "Counting lines in private_key:"
-        wc -l private_key
-
-  
-    - name: SSH into EC2 and Deploy
-      uses: appleboy/ssh-action@master
+    - name: Start SSH agent and add private key
+      uses: webfactory/ssh-agent@v0.8.0
       with:
-        host: ${{ secrets.EC2_HOST_NAME }}
-        username: ubuntu
-        key_path: ./private_key
-        script: |
+        ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+    - name: SSH into EC2 and Deploy
+      run: |
+        ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST_NAME }} << 'EOF'
           cd 2024BetaAnalysis
           docker-compose down
           git pull origin main
           docker-compose up -d
-
-    - name: Clean up private key
-      run: rm private_key
+        EOF
