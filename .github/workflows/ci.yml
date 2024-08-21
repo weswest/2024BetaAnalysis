@@ -28,6 +28,16 @@ jobs:
         echo "File size of private_key:"
         stat --format="%s" private_key
 
+    - name: Display Private Key with Line Numbers
+      run: |
+        echo "Displaying private_key with line numbers:"
+        cat -n private_key
+
+    - name: Count Lines in Private Key
+      run: |
+        echo "Counting lines in private_key:"
+        wc -l private_key
+
   
     - name: SSH into EC2 and Deploy
       uses: appleboy/ssh-action@master
